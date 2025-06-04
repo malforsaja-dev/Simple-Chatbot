@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Button, Textarea } from "@/components";
 
 export default function Home() {
   const [input, setInput] = useState<string>("");
@@ -9,13 +10,13 @@ export default function Home() {
   const [loading, setLoading] = useState<boolean>(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setInput(e.target.value);
-    setResponse("");
     setError("");
+    setResponse("");
+    setInput(e.target.value);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSubmit();
     }
@@ -28,17 +29,28 @@ export default function Home() {
     }
 
     setError("");
+    setResponse("");
     setLoading(true);
 
-    const res = await fetch("/api/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ input }),
-    });
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ input }),
+      });
 
-    const data = await res.json();
-    setResponse(data.response);
-    setLoading(false);
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || "Something went wrong. Please try again.");
+      } else {
+        setResponse(data.response);
+      }
+    } catch (err) {
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -58,27 +70,22 @@ export default function Home() {
           <label className="block text-gray-700 font-semibold mb-1">
             Your Text:
           </label>
-          <textarea
+          <Textarea
             required
             rows={6}
             value={input}
-            placeholder="Paste or write a paragraph you want to summarize..."
-            className="w-full border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:outline-none p-3 rounded-md text-gray-800"
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
+            placeholder="Write or paste your paragraph (Shift+Enter for newline)..."
           />
           {error && (
             <p className="text-red-600 text-sm">{error}</p>
           )}
         </div>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2 rounded-md transition cursor-pointer disabled:opacity-50"
-        >
+        <Button type="submit" disabled={loading}>
           {loading ? "Processing..." : "Generate Summary"}
-        </button>
+        </Button>
       </form>
 
       {response && (
